@@ -80,7 +80,7 @@ function App() {
 
   return (
     <div>
-      <VStack border={'1px,solid,black'} borderRadius={10} spacing={4} align="center" width="50%" margin="30px auto" padding={4}>
+      <VStack border={'1px,solid,black'} borderRadius={10} spacing={4} align="center" width="100%" margin="30px auto" padding={4}>
       <Heading as="h1" size="xl" my={5} textAlign={'center'}>COREPLANT Ply Combination Calculator</Heading>
       <Input
         type="number"
