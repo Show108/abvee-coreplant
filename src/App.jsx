@@ -1,87 +1,133 @@
-import { Box, Button, Heading, Input, VStack } from '@chakra-ui/react';
-import React, { useState } from 'react';
+import {
+  Box,
+  Button,
+  Heading,
+  Input,
+  VStack,
+  HStack,
+  Text,
+  List,
+  ListItem,
+  IconButton,
+} from "@chakra-ui/react";
+import {
+  DialogActionTrigger,
+  DialogBody,
+  DialogCloseTrigger,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogRoot,
+  DialogTitle,
+  DialogTrigger,
+} from "../src/components/ui/dialog";
+import { FaPlus } from "react-icons/fa";
+import React, { useState } from "react";
+import Select from "react-select";
 
 function App() {
-  const [inputValue, setInputValue] = useState('');
-  const [excludeValue, setExcludeValue] = useState('');
-  const [maxMultipliers, setMaxMultipliers] = useState({ 200: 0, 230: 0, 250: 0, 350: 0, 450: 0 });
-  const [result, setResult] = useState(null);
-
-  const numbers = [200, 230, 250, 350, 450];
+  const [inputValue, setInputValue] = useState("");
+  const [excludeValues, setExcludeValues] = useState([]);
+  const [maxMultipliers, setMaxMultipliers] = useState({});
+  const [result, setResult] = useState([]);
+  const [numbers, setNumbers] = useState([200, 230, 250, 350, 450]);
+  const [newNumber, setNewNumber] = useState("");
 
   const handleChange = (e) => {
     setInputValue(e.target.value);
   };
 
-  const handleExcludeChange = (e) => {
-    const values = e.target.value.split(',').map(val => parseInt(val.trim(), 10)).filter(val => !isNaN(val));
-    setExcludeValue(values);
+  const handleExcludeChange = (selectedOptions) => {
+    const values = selectedOptions.map((option) => option.value);
+    setExcludeValues(values);
   };
 
   const handleMaxMultiplierChange = (num) => (e) => {
-    setMaxMultipliers({ ...maxMultipliers, [num]: parseInt(e.target.value, 10) });
+    setMaxMultipliers({
+      ...maxMultipliers,
+      [num]: parseInt(e.target.value, 10),
+    });
   };
 
   const handleCalculate = () => {
     const target = parseInt(inputValue, 10);
-    const exclude = parseInt(excludeValue, 10);
 
     if (isNaN(target)) {
-      setResult('Please enter a valid number');
+      setResult([{ num: "Error", multiplier: "Please enter a valid number" }]);
       return;
     }
 
-    const filteredNumbers = isNaN(exclude) ? numbers : numbers.filter(num => num !== exclude);
+    const filteredNumbers = filterNumbers(numbers, excludeValues);
+    const combination = findCombination(
+      target,
+      filteredNumbers,
+      maxMultipliers
+    );
 
-    const findCombination = (target, numbers, maxMultipliers) => {
-      const result = numbers.map(num => ({ num, multiplier: 0 }));
-      let remaining = target;
+    setResult(Array.isArray(combination) ? combination : []);
+  };
 
-      // Apply the specified maximum multipliers first
+  const filterNumbers = (numbers, excludeValues) => {
+    return numbers.filter((num) => !excludeValues.includes(num));
+  };
+
+  const findCombination = (target, numbers, maxMultipliers) => {
+    const result = numbers.map((num) => ({ num, multiplier: 0 }));
+    let remaining = target;
+
+    // Apply the specified maximum multipliers first
+    for (let i = 0; i < numbers.length; i++) {
+      const num = numbers[i];
+      const maxMultiplier = maxMultipliers[num];
+      if (maxMultiplier !== undefined && maxMultiplier > 0) {
+        const maxContribution = num * maxMultiplier;
+        if (remaining >= maxContribution) {
+          result[i].multiplier = maxMultiplier;
+          remaining -= maxContribution;
+        } else {
+          result[i].multiplier = Math.floor(remaining / num);
+          remaining -= num * result[i].multiplier;
+        }
+      }
+    }
+
+    // Distribute the remaining value among the other numbers as evenly as possible
+    while (remaining > 0) {
+      let distributed = false;
       for (let i = 0; i < numbers.length; i++) {
         const num = numbers[i];
         const maxMultiplier = maxMultipliers[num];
-        if (maxMultiplier > 0) {
-          const maxContribution = num * maxMultiplier;
-          if (remaining >= maxContribution) {
-            result[i].multiplier = maxMultiplier;
-            remaining -= maxContribution;
-          } else {
-            result[i].multiplier = Math.floor(remaining / num);
-            remaining -= num * result[i].multiplier;
-          }
+        if (
+          remaining >= num &&
+          (maxMultiplier === undefined || result[i].multiplier < maxMultiplier)
+        ) {
+          result[i].multiplier += 1;
+          remaining -= num;
+          distributed = true;
         }
       }
+      if (!distributed) break; // If no distribution was possible, break the loop
+    }
 
-      // Distribute the remaining value among the other numbers
-      while (remaining !== 0) {
-        let distributed = false;
-        for (let i = 0; i < numbers.length; i++) {
-          const num = numbers[i];
-          if ((result[i].multiplier < maxMultipliers[num] || maxMultipliers[num] === 0) && remaining >= num) {
-            result[i].multiplier += 1;
-            remaining -= num;
-            distributed = true;
-          } else if (remaining < num && remaining > 0) {
-            result[i].multiplier += 1;
-            remaining -= num;
-            distributed = true;
-          }
-        }
-        if (!distributed) break; // If no distribution happened, break the loop to avoid infinite loop
-      }
-
-      return result;
-    };
-
-    const combination = findCombination(target, filteredNumbers, maxMultipliers);
-    setResult(combination);
+    return result;
   };
 
+  const handleAddNumber = () => {
+    const num = parseInt(newNumber, 10);
+    if (!isNaN(num) && !numbers.includes(num)) {
+      setNumbers([...numbers, num]);
+      setNewNumber("");
+      onClose();
+    }
+  };
+
+  const options = numbers.map((num) => ({ value: num, label: num }));
+
   return (
-    <div>
-      <VStack border={'1px,solid,black'} borderRadius={10} spacing={4} align="center" width="100%" margin="30px auto" padding={4}>
-      <Heading as="h1" size="xl" my={5} textAlign={'center'}>COREPLANT Ply Combination Calculator</Heading>
+    <VStack spacing={4} align="stretch" width="50%" margin="0 auto" padding={4}>
+      <Heading as="h1" size="xl" my={5} textAlign={"center"}>
+        COREPLANT Ply Combination Calculator
+      </Heading>
       <Input
         type="number"
         value={inputValue}
@@ -89,53 +135,80 @@ function App() {
         placeholder="Enter a Ply GSM"
         w="75%"
       />
-      <Input
-        type="number"
-        value={excludeValue}
+      <Select
+        isMulti
+        options={options}
         onChange={handleExcludeChange}
-        placeholder="Enter a ply thickness to exclude"
-        w="75%" 
+        placeholder="Select numbers to exclude"
+        closeMenuOnSelect={false}
       />
-      
-      {numbers.map(num => (
-        <div key={num}>
-          <label>
-            Max {num} multiplier:
-            <br />
+      {numbers.map((num) => (
+        <HStack key={num}>
+          <Text>Max {num} multiplier:</Text>
+          <Input
+            type="number"
+            value={maxMultipliers[num] || ""}
+            onChange={handleMaxMultiplierChange(num)}
+            placeholder={`Max ${num} multiplier`}
+          />
+        </HStack>
+      ))}
+
+      <Button onClick={handleCalculate} bgColor="black">
+        Calculate
+      </Button>
+      {result.length > 0 && (
+        <Box
+          borderWidth="1px"
+          borderRadius="lg"
+          padding={4}
+          marginTop={4}
+          bg="gray.50"
+        >
+          <Heading size="md" mb={4}>
+            Result:
+          </Heading>
+          <List.Root spacing={3}>
+            {result.map((item, index) => (
+              <List.Item key={index}>
+                <Box fontSize={20}>
+                  {item.num} x {item.multiplier}
+                </Box>
+              </List.Item>
+            ))}
+          </List.Root>
+        </Box>
+      )}
+      <DialogRoot
+        size="cover"
+        placement="center"
+        motionPreset="slide-in-bottom"
+      >
+        <DialogTrigger asChild>
+          <Button bgColor='teal' mt={5} >add ply</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add a New Ply</DialogTitle>
+            <DialogCloseTrigger />
+          </DialogHeader>
+          <DialogBody>
             <Input
               type="number"
-              value={maxMultipliers[num]}
-              onChange={handleMaxMultiplierChange(num)}
-              placeholder={`Max ${num} multiplier`}
-              w="100%"  
-
-           />
-          </label>
-          
-        </div>
-      ))}
-      <Button onClick={handleCalculate} w={'25%'}>Calculate</Button>
-      {result && (
-        <div>
-          <Heading>Result:</Heading>
-          {typeof result === 'string' ? (
-            <p>{result}</p>
-          ) : (
-            <ul>
-              {result.map((item, index) => (
-                <li key={index}>
-                  <Box fontSize={20}>{item.num} x {item.multiplier}</Box>
-                  
-                </li>
-              ))}
-            </ul>
-          )}
-          
-        </div>
-        
-      )}
-      </VStack>
-    </div>
+              value={newNumber}
+              onChange={(e) => setNewNumber(e.target.value)}
+              placeholder="Enter a new number"
+            />
+          </DialogBody>
+          <DialogFooter>
+            <Button colorScheme="teal" onClick={handleAddNumber}>
+              Add 
+            </Button>
+          </DialogFooter>
+          <DialogCloseTrigger />
+        </DialogContent>
+      </DialogRoot>
+    </VStack>
   );
 }
 
