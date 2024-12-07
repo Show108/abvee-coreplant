@@ -9,6 +9,7 @@ import {
   List,
   ListItem,
   IconButton,
+  Flex,
 } from "@chakra-ui/react";
 import {
   DialogActionTrigger,
@@ -168,12 +169,12 @@ function App() {
           <Heading size="md" mb={4}>
             Result:
           </Heading>
-          <List.Root spacing={3}>
+          <List.Root as="ol">
             {result.map((item, index) => (
               <List.Item key={index}>
-                <Box fontSize={20}>
+                <Flex fontSize={20}>
                   {item.num} x {item.multiplier}
-                </Box>
+                </Flex>
               </List.Item>
             ))}
           </List.Root>
