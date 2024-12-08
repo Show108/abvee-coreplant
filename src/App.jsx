@@ -92,7 +92,6 @@ function App() {
       }
     }
 
-    // Distribute the remaining value among the other numbers as evenly as possible
     while (remaining > 0) {
       let distributed = false;
       for (let i = 0; i < numbers.length; i++) {
@@ -125,7 +124,7 @@ function App() {
   const options = numbers.map((num) => ({ value: num, label: num }));
 
   return (
-    <VStack spacing={4} align="stretch" width="50%" margin="0 auto" padding={4}>
+    <VStack spacing={4} align="stretch" width="75%" margin="0 auto" padding={4}>
       <Heading as="h1" size="xl" my={5} textAlign={"center"}>
         COREPLANT Ply Combination Calculator
       </Heading>
@@ -134,7 +133,7 @@ function App() {
         value={inputValue}
         onChange={handleChange}
         placeholder="Enter a Ply GSM"
-        w="75%"
+        w="100%"
       />
       <Select
         isMulti
@@ -155,7 +154,7 @@ function App() {
         </HStack>
       ))}
 
-      <Button onClick={handleCalculate} bgColor="black">
+      <Button onClick={handleCalculate}>
         Calculate
       </Button>
       {result.length > 0 && (
@@ -171,10 +170,10 @@ function App() {
           </Heading>
           <List.Root as="ol">
             {result.map((item, index) => (
-              <List.Item key={index}>
-                <Flex fontSize={20}>
+              <List.Item key={index} fontSize={30}>
+                
                   {item.num} x {item.multiplier}
-                </Flex>
+                
               </List.Item>
             ))}
           </List.Root>
@@ -186,7 +185,7 @@ function App() {
         motionPreset="slide-in-bottom"
       >
         <DialogTrigger asChild>
-          <Button bgColor='teal' mt={5} >add ply</Button>
+          <Button bgColor='teal' mt={5} >Add ply</Button>
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
